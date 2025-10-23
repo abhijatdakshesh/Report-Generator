@@ -270,7 +270,7 @@ def progress_pdf():
     if 'branch_choice' not in st.session_state:
         st.session_state.branch_choice = "COMPUTER SCIENCE & ENGINEERING"
     if 'test_choice' not in st.session_state:
-        st.session_state.test_choice = "ATTENDANCE REPORT"
+        st.session_state.test_choice = "CIE-1"
     if 'semester' not in st.session_state:
         st.session_state.semester = " I Semester BE  "
     if 'no_of_subjects' not in st.session_state:
@@ -283,7 +283,7 @@ def progress_pdf():
 
     Branch_Choice = st.selectbox("Choose Branch: ",["COMPUTER SCIENCE & ENGINEERING","INFORMATION SCIENCE & ENGINEERING","ELECTRONICS & COMMUNICATION ENGINEERING", "MECHANICAL ENGINEERING","MASTER OF COMPUTER APPLICATIONS"], key="branch_selectbox")
 
-    test_choice = st.selectbox("Choose the test: ",["ATTENDANCE REPORT"], key="test_selectbox")   
+    test_choice = st.selectbox("Choose the test: ",["CIE-1", "CIE-2", "CIE-3"], key="test_selectbox")   
 
     submission_d = st.date_input("The Ward Should Submit the Signed Attendance Report to Counsellor Before:", date.today(), key="submission_date")
     day = submission_d.day
