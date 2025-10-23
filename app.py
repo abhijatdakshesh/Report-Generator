@@ -89,12 +89,12 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
     para = Paragraph(text, style)
     elements.append(para)
     
-    father = str(df.iloc[row, 3])
+    father = str(df.iloc[row, 2])  # Father Name is in column 2
     heading = Paragraph("\u00a0 \u00a0 \u00a0Mr/Mrs \u00a0"+father+",", bold_style)
     elements.append(heading)
 
-    student_name = df.iloc[row,1]
-    USN = df.iloc[row,2]
+    student_name = df.iloc[row,0]  # Student Name is in column 0
+    USN = df.iloc[row,1]  # USN is in column 1
     style_sheet = getSampleStyleSheet()
     style = style_sheet['Normal']
     text = "\u00a0 \u00a0 \u00a0 \u00a0 \u00a0 \u00a0The Attendance report of your ward <b>"+str(student_name)+",\u00a0"+str(USN)+"</b> studying in <b>"+str(semester)+"</b> is given below : "
