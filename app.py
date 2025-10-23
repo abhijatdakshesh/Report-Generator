@@ -121,8 +121,8 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
         classes_held_col = 10 + i * 3
         # Test marks are in the same column as classes held (column 10, 13, 16, 19, 22)
         test_marks_col = 10 + i * 3
-        # Assignments - we'll use a placeholder since the data doesn't have separate assignment columns
-        assignment = '-'  # Placeholder for assignments
+        # Assignments - we'll use the classes attended values as assignment marks
+        assignment_col = 9 + i * 3  # Same as classes attended
         
         subject = df.iloc[row, subject_col]  # Get subject name from the student's row, not row 0
         # Convert subject to string and handle NaN values
@@ -149,6 +149,16 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
                 test_marks = str(int(test_marks))
         except (ValueError, TypeError):
             test_marks = '-'
+            
+        # Get assignment marks (using classes attended values)
+        try:
+            assignment = df.iloc[row, assignment_col]
+            if pd.isna(assignment):
+                assignment = '-'
+            else:
+                assignment = str(int(assignment))
+        except (ValueError, TypeError):
+            assignment = '-'
     
         # Check if both classesheld and classattended are zero
         if classesheld == 0 and classattended == 0:
