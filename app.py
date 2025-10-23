@@ -106,11 +106,11 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
     wrapped_classheld  = textwrap.fill("Classes Held", width=7)
     wrapped_classattended = textwrap.fill("Classes Attended", width=9)
     # Handle potential NaN values in column headers
-    test_marks_header = df.iloc[1,10] if not pd.isna(df.iloc[1,10]) else "Test Marks"
-    assignment_header = df.iloc[1,11] if not pd.isna(df.iloc[1,11]) else "Assignment"
+    test_marks_header = df.iloc[0,10] if not pd.isna(df.iloc[0,10]) else "Test Marks"
+    assignment_header = df.iloc[0,11] if not pd.isna(df.iloc[0,11]) else "Assignment"
     wrapped_testmarks = textwrap.fill(str(test_marks_header), width=10)
     wrapped_assignment = textwrap.fill(str(assignment_header), width=10)
-    data = [[wrapped_sl,"Subject Name",wrapped_classheld,wrapped_classattended,wrapped_attendance]]
+    data = [[wrapped_sl,"Subject Name",wrapped_classheld,wrapped_classattended,wrapped_attendance,wrapped_testmarks,wrapped_assignment]]
 
     for i in range(no_of_subjects):
         # Subject names are in columns 8, 11, 14, 17, 20, etc. (every 3rd column starting from 8)
@@ -119,6 +119,10 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
         classes_attended_col = 9 + i * 3
         # Classes held are in columns 10, 13, 16, 19, 22, etc. (every 3rd column starting from 10)
         classes_held_col = 10 + i * 3
+        # Test marks are in the same column as classes held (column 10, 13, 16, 19, 22)
+        test_marks_col = 10 + i * 3
+        # Assignments - we'll use a placeholder since the data doesn't have separate assignment columns
+        assignment = '-'  # Placeholder for assignments
         
         subject = df.iloc[row, subject_col]  # Get subject name from the student's row, not row 0
         # Convert subject to string and handle NaN values
@@ -135,6 +139,16 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
             classesheld = int(df.iloc[row, classes_held_col])
         except (ValueError, TypeError):
             classesheld = 0
+        
+        # Get test marks
+        try:
+            test_marks = df.iloc[row, test_marks_col]
+            if pd.isna(test_marks):
+                test_marks = '-'
+            else:
+                test_marks = str(int(test_marks))
+        except (ValueError, TypeError):
+            test_marks = '-'
     
         # Check if both classesheld and classattended are zero
         if classesheld == 0 and classattended == 0:
@@ -153,7 +167,7 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
       
         wrapped_subject = textwrap.fill(subject, width=30)
     
-        data.append([str(i + 1), wrapped_subject, classesheld, classattended, "{}%".format(attendance)])
+        data.append([str(i + 1), wrapped_subject, classesheld, classattended, "{}%".format(attendance), test_marks, assignment])
 
     table = Table(data, splitByRow=1, spaceBefore=10, spaceAfter=10, cornerRadii=[1.5,1.5,1.5,1.5])
     
@@ -163,7 +177,7 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
     ('BACKGROUND', (0, 0), (-1, 0), '#FFFFFF'),
     ('TEXTCOLOR', (0, 0), (-1, 0), '#000000'),
     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-    ('fontsize', (-1,-1), (-1,-1), 14),
+    ('fontsize', (-1,-1), (-1,-1), 12),
     ('ALIGNMENT', (1, 1), (1, -1), 'LEFT'),
     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
     ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
