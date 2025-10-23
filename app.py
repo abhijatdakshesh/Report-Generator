@@ -245,23 +245,32 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
     return buffer
 
 def progress_pdf():
+    # Initialize session state
+    if 'branch_choice' not in st.session_state:
+        st.session_state.branch_choice = "COMPUTER SCIENCE & ENGINEERING"
+    if 'test_choice' not in st.session_state:
+        st.session_state.test_choice = "ATTENDANCE REPORT"
+    if 'semester' not in st.session_state:
+        st.session_state.semester = " I Semester BE  "
+    if 'no_of_subjects' not in st.session_state:
+        st.session_state.no_of_subjects = 1
 
     st.markdown("<div style='text-align:center;'><h2> </h2></div>", unsafe_allow_html=True,)
 
     st.markdown("<div style='text-align:center;'><h3> 📈 ATTENDANCE REPORT GENERATOR </h3></div>", unsafe_allow_html=True,)
     st.markdown("<div style='text-align:center;'><h1> </h1></div>", unsafe_allow_html=True,)
 
-    Branch_Choice = st.selectbox("Choose Branch: ",["COMPUTER SCIENCE & ENGINEERING","INFORMATION SCIENCE & ENGINEERING","ELECTRONICS & COMMUNICATION ENGINEERING", "MECHANICAL ENGINEERING","MASTER OF COMPUTER APPLICATIONS"])
+    Branch_Choice = st.selectbox("Choose Branch: ",["COMPUTER SCIENCE & ENGINEERING","INFORMATION SCIENCE & ENGINEERING","ELECTRONICS & COMMUNICATION ENGINEERING", "MECHANICAL ENGINEERING","MASTER OF COMPUTER APPLICATIONS"], key="branch_selectbox")
 
-    test_choice = st.selectbox("Choose the test: ",["ATTENDANCE REPORT"])   
+    test_choice = st.selectbox("Choose the test: ",["ATTENDANCE REPORT"], key="test_selectbox")   
 
-    submission_d = st.date_input("The Ward Should Submit the Signed Attendance Report to Counsellor Before:", date.today())
+    submission_d = st.date_input("The Ward Should Submit the Signed Attendance Report to Counsellor Before:", date.today(), key="submission_date")
     day = submission_d.day
     suffix = 'th' if 11 <= day <= 13 else {1: 'st', 2: 'nd', 3: 'rd'}.get(day % 10, 'th')
     submission_d = submission_d.strftime(f"%d{suffix} %b, %Y")
     
-    semester = st.selectbox("Select the Semester: ",[" I Semester BE  "," II Semester BE  ", " III Semester BE  "," IV Semester BE ", "V Semester BE", "VI Semester BE","VII Semester BE"," VIII Semester BE", "I Semester MCA", "II Semester MCA", "III Semester MCA", "IV Semester MCA","V Semester MCA","VI Semester MCA"])   
-    no_of_subjects = st.selectbox("Select the no of Subjects: ",[1,2,3,4,5,6,7,8,9,10,11])   
+    semester = st.selectbox("Select the Semester: ",[" I Semester BE  "," II Semester BE  ", " III Semester BE  "," IV Semester BE ", "V Semester BE", "VI Semester BE","VII Semester BE"," VIII Semester BE", "I Semester MCA", "II Semester MCA", "III Semester MCA", "IV Semester MCA","V Semester MCA","VI Semester MCA"], key="semester_selectbox")   
+    no_of_subjects = st.selectbox("Select the no of Subjects: ",[1,2,3,4,5,6,7,8,9,10,11], key="subjects_selectbox")   
     note = st.text_area("General Note (If any*):",placeholder="example: Attendace considered up till 17th March 2023")
 
     uploaded_file = st.file_uploader("Upload the Marks Sheet Excel File for the test:", type=["xlsx"])   
