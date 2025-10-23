@@ -197,7 +197,7 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
 
     style_sheet = getSampleStyleSheet()
     style = style_sheet['Normal']
-    text = "<b>Remarks:</b>\u00a0"+str(df.iloc[row,7])+""
+    text = "<b>Remarks:</b>\u00a0"+str(df.iloc[row,5])+""
     para = Paragraph(text, style)
     elements.append(para)
 
