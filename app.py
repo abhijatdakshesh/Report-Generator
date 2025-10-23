@@ -113,16 +113,13 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
     data = [[wrapped_sl,"Subject Name",wrapped_classheld,wrapped_classattended,wrapped_attendance,wrapped_testmarks,wrapped_assignment]]
 
     for i in range(no_of_subjects):
-        # Subject names are in columns 8, 11, 14, 17, 20, etc. (every 3rd column starting from 8)
-        subject_col = 8 + i * 3
-        # Classes attended are in columns 9, 12, 15, 18, 21, etc. (every 3rd column starting from 9)
-        classes_attended_col = 9 + i * 3
-        # Classes held are in columns 10, 13, 16, 19, 22, etc. (every 3rd column starting from 10)
-        classes_held_col = 10 + i * 3
-        # Test marks are in the same column as classes held (column 10, 13, 16, 19, 22)
-        test_marks_col = 10 + i * 3
-        # Assignments - we'll use the classes attended values as assignment marks
-        assignment_col = 9 + i * 3  # Same as classes attended
+        # New structure: each subject has 5 columns (subject, test marks, assignment, classes held, classes attended)
+        # Starting from column 6 (after Student Name, USN, Father Name, Parent Email, Counsellor Email, Remarks)
+        subject_col = 6 + i * 5
+        test_marks_col = 7 + i * 5
+        assignment_col = 8 + i * 5
+        classes_held_col = 9 + i * 5
+        classes_attended_col = 10 + i * 5
         
         subject = df.iloc[row, subject_col]  # Get subject name from the student's row, not row 0
         # Convert subject to string and handle NaN values
@@ -150,7 +147,7 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
         except (ValueError, TypeError):
             test_marks = '-'
             
-        # Get assignment marks (using classes attended values)
+        # Get assignment marks
         try:
             assignment = df.iloc[row, assignment_col]
             if pd.isna(assignment):
