@@ -105,20 +105,36 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
     wrapped_attendance  = textwrap.fill("Attendance Percentage", width=10)
     wrapped_classheld  = textwrap.fill("Classes Held", width=7)
     wrapped_classattended = textwrap.fill("Classes Attended", width=9)
-    wrapped_testmarks = textwrap.fill(str(df.iloc[1,10]), width=10)
-    wrapped_assignment = textwrap.fill(str(df.iloc[1,11]), width=10)
+    # Handle potential NaN values in column headers
+    test_marks_header = df.iloc[1,10] if not pd.isna(df.iloc[1,10]) else "Test Marks"
+    assignment_header = df.iloc[1,11] if not pd.isna(df.iloc[1,11]) else "Assignment"
+    wrapped_testmarks = textwrap.fill(str(test_marks_header), width=10)
+    wrapped_assignment = textwrap.fill(str(assignment_header), width=10)
     data = [[wrapped_sl,"Subject Name",wrapped_classheld,wrapped_classattended,wrapped_attendance]]
 
     for i in range(no_of_subjects):
-        subject = df.iloc[0, 8 + i * 2]
+        # Subject names are in columns 8, 11, 14, 17, 20, etc. (every 3rd column starting from 8)
+        subject_col = 8 + i * 3
+        # Classes attended are in columns 9, 12, 15, 18, 21, etc. (every 3rd column starting from 9)
+        classes_attended_col = 9 + i * 3
+        # Classes held are in columns 10, 13, 16, 19, 22, etc. (every 3rd column starting from 10)
+        classes_held_col = 10 + i * 3
+        
+        subject = df.iloc[row, subject_col]  # Get subject name from the student's row, not row 0
+        # Convert subject to string and handle NaN values
+        if pd.isna(subject):
+            subject = f"Subject {i + 1}"
+        else:
+            subject = str(subject)
+            
         try:
-            classesheld = int(df.iloc[row, 8 + i * 2])
-        except ValueError:
-            classesheld = 0
-        try:
-            classattended = int(df.iloc[row, 9 + i * 2])
-        except ValueError:
+            classattended = int(df.iloc[row, classes_attended_col])
+        except (ValueError, TypeError):
             classattended = 0
+        try:
+            classesheld = int(df.iloc[row, classes_held_col])
+        except (ValueError, TypeError):
+            classesheld = 0
     
         # Check if both classesheld and classattended are zero
         if classesheld == 0 and classattended == 0:
@@ -128,6 +144,9 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
         else:
             try:
                 attendance = int(classattended / classesheld * 100)
+                # Ensure attendance percentage never exceeds 100%
+                if attendance > 100:
+                    attendance = 100
             except ZeroDivisionError:
                 attendance = 0
     
