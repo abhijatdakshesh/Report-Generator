@@ -222,7 +222,7 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
     counsellor_mail = str(df.iloc[row,4])  # Counsellor Email is in column 4
     style_sheet = getSampleStyleSheet()
     style = style_sheet['Normal']
-    text = "Please sign and send the report to ""+counsellor_mail+"" on or before "+submission_d+"."
+    text = "Please sign and send the report to \""+counsellor_mail+"\" on or before "+submission_d+"."
     para = Paragraph(text, style)
     elements.append(para)
 
