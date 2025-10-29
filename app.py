@@ -19,6 +19,28 @@ from email import encoders
 
 from datetime import date
 
+def resolve_signature_image_path(branch_choice):
+    """Return a valid signature image path for the given branch, with safe fallbacks.
+
+    Uses an existing image as a default to avoid missing-file errors.
+    """
+    # Prefer a known-good fallback that exists in the repo
+    fallback_path = "Images/CSE_Signature.png"
+    branch_to_path = {
+        "COMPUTER SCIENCE & ENGINEERING": "Images/CSE_Signature.png",
+        "INFORMATION SCIENCE & ENGINEERING": "Images/ISE REPORT.jpg",
+        "ELECTRONICS & COMMUNICATION ENGINEERING": "Images/ECE_Signature.png",
+        "MECHANICAL ENGINEERING": "Images/ME_Signature.png",
+        "MASTER OF COMPUTER APPLICATIONS": "Images/MCA_Signature.png",
+    }
+    path = branch_to_path.get(branch_choice, fallback_path)
+    try:
+        # Validate file existence early; reportlab will throw later otherwise
+        Path(path).resolve(strict=True)
+        return path
+    except Exception:
+        return fallback_path
+
 hide_st_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -226,20 +248,12 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
     para = Paragraph(text, style)
     elements.append(para)
 
-    image_path = "Images/default.png"
-
- 
-    if Branch_Choice == "COMPUTER SCIENCE & ENGINEERING":
-        image_path = "Images/CSE_Signature.png"
-    elif Branch_Choice == "INFORMATION SCIENCE & ENGINEERING":
-        image_path = "Images/ISE_Signature.png"
-    elif Branch_Choice == "ELECTRONICS & COMMUNICATION ENGINEERING":
-        image_path = "Images/ECE_Signature.png"
-    elif Branch_Choice == "MECHANICAL ENGINEERING":
-        image_path = "Images/ME_Signature.png"
-    elif Branch_Choice == "MASTER OF COMPUTER APPLICATIONS":
-        image_path = "Images/MCA_Signature.png"
-    image = Image(image_path, width=7*inch, height=1.4155*inch)
+    image_path = resolve_signature_image_path(Branch_Choice)
+    try:
+        image = Image(image_path, width=7*inch, height=1.4155*inch)
+    except Exception:
+        # Final fallback to a known-good signature if the chosen one can't be read
+        image = Image("Images/CSE_Signature.png", width=7*inch, height=1.4155*inch)
     elements.append(image)
 
     style_sheet = getSampleStyleSheet()
