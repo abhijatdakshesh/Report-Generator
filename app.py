@@ -28,7 +28,7 @@ def resolve_signature_image_path(branch_choice):
     fallback_path = "Images/CSE_Signature.png"
     branch_to_path = {
         "COMPUTER SCIENCE & ENGINEERING": "Images/CSE_Signature.png",
-        "INFORMATION SCIENCE & ENGINEERING": "Images/ISE REPORT.jpg",
+        "INFORMATION SCIENCE & ENGINEERING": "Images/ISE_Signature.jpg",
         "ELECTRONICS & COMMUNICATION ENGINEERING": "Images/ECE_Signature.png",
         "MECHANICAL ENGINEERING": "Images/ME_Signature.png",
         "MASTER OF COMPUTER APPLICATIONS": "Images/MCA_Signature.png",
@@ -127,9 +127,15 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
     wrapped_attendance  = textwrap.fill("Attendance Percentage", width=10)
     wrapped_classheld  = textwrap.fill("Classes Held", width=7)
     wrapped_classattended = textwrap.fill("Classes Attended", width=9)
-    # Handle potential NaN values in column headers
-    test_marks_header = df.iloc[0,10] if not pd.isna(df.iloc[0,10]) else "Test Marks"
-    assignment_header = df.iloc[0,11] if not pd.isna(df.iloc[0,11]) else "Assignment"
+    # Handle potential NaN values in column headers - get from first subject's columns (7 and 8)
+    # Column 7 is Test marks, Column 8 is Assignment for the first subject
+    test_marks_header = df.iloc[0, 7] if 7 < df.shape[1] and not pd.isna(df.iloc[0, 7]) else "Test Marks"
+    assignment_header = df.iloc[0, 8] if 8 < df.shape[1] and not pd.isna(df.iloc[0, 8]) else "Assignment"
+    # Clean up the header text to remove "(Max Marks XX)" if present
+    if isinstance(test_marks_header, str) and "(" in test_marks_header:
+        test_marks_header = test_marks_header.split("(")[0].strip()
+    if isinstance(assignment_header, str) and "(" in assignment_header:
+        assignment_header = assignment_header.split("(")[0].strip()
     wrapped_testmarks = textwrap.fill(str(test_marks_header), width=10)
     wrapped_assignment = textwrap.fill(str(assignment_header), width=10)
     data = [[wrapped_sl,"Subject Name",wrapped_classheld,wrapped_classattended,wrapped_attendance,wrapped_testmarks,wrapped_assignment]]
@@ -143,39 +149,71 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
         classes_held_col = 9 + i * 5
         classes_attended_col = 10 + i * 5
         
-        subject = df.iloc[row, subject_col]  # Get subject name from the student's row, not row 0
+        # Check if columns exist in the dataframe
+        if subject_col >= df.shape[1]:
+            break  # Skip if column doesn't exist
+        
+        # Get subject name from header row (row 0) for consistency, fallback to student row if needed
+        subject = None
+        if subject_col < df.shape[1]:
+            if not pd.isna(df.iloc[0, subject_col]):
+                subject = df.iloc[0, subject_col]
+            elif row < df.shape[0] and not pd.isna(df.iloc[row, subject_col]):
+                subject = df.iloc[row, subject_col]
+        
         # Convert subject to string and handle NaN values
-        if pd.isna(subject):
+        if subject is None or pd.isna(subject):
             subject = f"Subject {i + 1}"
         else:
-            subject = str(subject)
+            subject = str(subject).strip()  # Strip whitespace for cleaner display
             
         try:
-            classattended = int(df.iloc[row, classes_attended_col])
+            if classes_attended_col < df.shape[1]:
+                classattended_val = df.iloc[row, classes_attended_col]
+                if pd.isna(classattended_val) or str(classattended_val).strip() == '-':
+                    classattended = 0
+                else:
+                    classattended = int(classattended_val)
+            else:
+                classattended = 0
         except (ValueError, TypeError):
             classattended = 0
+            
         try:
-            classesheld = int(df.iloc[row, classes_held_col])
+            if classes_held_col < df.shape[1]:
+                classesheld_val = df.iloc[row, classes_held_col]
+                if pd.isna(classesheld_val) or str(classesheld_val).strip() == '-':
+                    classesheld = 0
+                else:
+                    classesheld = int(classesheld_val)
+            else:
+                classesheld = 0
         except (ValueError, TypeError):
             classesheld = 0
         
         # Get test marks
         try:
-            test_marks = df.iloc[row, test_marks_col]
-            if pd.isna(test_marks):
-                test_marks = '-'
+            if test_marks_col < df.shape[1]:
+                test_marks_val = df.iloc[row, test_marks_col]
+                if pd.isna(test_marks_val) or str(test_marks_val).strip() == '-':
+                    test_marks = '-'
+                else:
+                    test_marks = str(int(float(test_marks_val)))  # Handle float values
             else:
-                test_marks = str(int(test_marks))
+                test_marks = '-'
         except (ValueError, TypeError):
             test_marks = '-'
             
         # Get assignment marks
         try:
-            assignment = df.iloc[row, assignment_col]
-            if pd.isna(assignment):
-                assignment = '-'
+            if assignment_col < df.shape[1]:
+                assignment_val = df.iloc[row, assignment_col]
+                if pd.isna(assignment_val) or str(assignment_val).strip() == '-':
+                    assignment = '-'
+                else:
+                    assignment = str(int(float(assignment_val)))  # Handle float values
             else:
-                assignment = str(int(assignment))
+                assignment = '-'
         except (ValueError, TypeError):
             assignment = '-'
     
@@ -195,8 +233,14 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
     
       
         wrapped_subject = textwrap.fill(subject, width=30)
+        
+        # Format attendance percentage
+        if attendance == '-':
+            attendance_str = '-'
+        else:
+            attendance_str = "{}%".format(attendance)
     
-        data.append([str(i + 1), wrapped_subject, classesheld, classattended, "{}%".format(attendance), test_marks, assignment])
+        data.append([str(i + 1), wrapped_subject, classesheld, classattended, attendance_str, test_marks, assignment])
 
     table = Table(data, splitByRow=1, spaceBefore=10, spaceAfter=10, cornerRadii=[1.5,1.5,1.5,1.5])
     
@@ -305,10 +349,35 @@ def progress_pdf():
     submission_d = submission_d.strftime(f"%d{suffix} %b, %Y")
     
     semester = st.selectbox("Select the Semester: ",[" I Semester BE  "," II Semester BE  ", " III Semester BE  "," IV Semester BE ", "V Semester BE", "VI Semester BE","VII Semester BE"," VIII Semester BE", "I Semester MCA", "II Semester MCA", "III Semester MCA", "IV Semester MCA","V Semester MCA","VI Semester MCA"], key="semester_selectbox")   
-    no_of_subjects = st.selectbox("Select the no of Subjects: ",[1,2,3,4,5,6,7,8,9,10,11], key="subjects_selectbox")   
-    note = st.text_area("General Note (If any*):",placeholder="example: Attendace considered up till 17th March 2023")
-
-    uploaded_file = st.file_uploader("Upload the Marks Sheet Excel File for the test:", type=["xlsx"])   
+    
+    uploaded_file = st.file_uploader("Upload the Marks Sheet Excel File for the test:", type=["xlsx"], key="file_uploader")
+    
+    # Auto-detect number of subjects from uploaded file
+    detected_subjects = None
+    if uploaded_file is not None:
+        try:
+            # Reset file pointer to beginning
+            uploaded_file.seek(0)
+            df_temp = pd.read_excel(uploaded_file)
+            # Calculate number of subjects: (total columns - 6 basic columns) / 5 columns per subject
+            detected_subjects = max(1, (df_temp.shape[1] - 6) // 5)
+            if detected_subjects > 11:
+                detected_subjects = 11
+            # Reset file pointer again for later use
+            uploaded_file.seek(0)
+            st.info(f"📚 Detected {detected_subjects} subject(s) in the uploaded file. Please verify and adjust if needed.")
+        except Exception as e:
+            detected_subjects = None
+            st.warning(f"Could not auto-detect number of subjects: {str(e)}")
+    
+    # Use detected subjects as default if available, otherwise use session state
+    if detected_subjects is not None:
+        default_subjects = detected_subjects
+    else:
+        default_subjects = st.session_state.get('no_of_subjects', 1)
+    
+    no_of_subjects = st.selectbox("Select the no of Subjects: ",[1,2,3,4,5,6,7,8,9,10,11], index=min(default_subjects-1, 10) if default_subjects >= 1 else 0, key="subjects_selectbox")   
+    note = st.text_area("General Note (If any*):",placeholder="example: Attendace considered up till 17th March 2023")   
 
     
     if uploaded_file is not None:
