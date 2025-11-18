@@ -28,7 +28,7 @@ def resolve_signature_image_path(branch_choice):
     fallback_path = "Images/CSE_Signature.png"
     branch_to_path = {
         "COMPUTER SCIENCE & ENGINEERING": "Images/CSE_Signature.png",
-        "INFORMATION SCIENCE & ENGINEERING": "Images/ISE_Signature.jpg",
+        "INFORMATION SCIENCE & ENGINEERING": "Images/ISE_sign.png",
         "ELECTRONICS & COMMUNICATION ENGINEERING": "Images/ECE_Signature.png",
         "MECHANICAL ENGINEERING": "Images/ME_Signature.png",
         "MASTER OF COMPUTER APPLICATIONS": "Images/MCA_Signature.png",
