@@ -263,7 +263,13 @@ def generate_pdf(df, row,Branch_Choice,test_choice,submission_d,semester,no_of_s
 
     style_sheet = getSampleStyleSheet()
     style = style_sheet['Normal']
-    text = "<b>Remarks:</b>\u00a0"+str(df.iloc[row,5])+""
+    # Handle NaN values in remarks - show empty string if NaN
+    remarks_value = df.iloc[row, 5]
+    if pd.isna(remarks_value) or str(remarks_value).strip() == '' or str(remarks_value).lower() == 'nan':
+        remarks_text = ""
+    else:
+        remarks_text = str(remarks_value)
+    text = "<b>Remarks:</b>\u00a0"+remarks_text+""
     para = Paragraph(text, style)
     elements.append(para)
 
