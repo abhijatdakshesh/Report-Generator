@@ -489,24 +489,24 @@ def progress_pdf():
                 buffer = generate_pdf(df, i, Branch_Choice, test_choice, submission_d,semester,no_of_subjects,note)
                 file_name = f"{df.iloc[i, 1]}.pdf"
                 
-                # Get email addresses and handle NaN/None values
-                email_val = df.iloc[i, 4]
+                # Get parent email address (column 3) and handle NaN/None values
+                email_val = df.iloc[i, 3]  # Column 3: Parent Email
                 if pd.isna(email_val) or str(email_val).strip() == '':
-                    st.warning(f"Skipping {df.iloc[i, 1]} - No email address found")
+                    st.warning(f"Skipping {df.iloc[i, 1]} - No parent email address found")
                     failed_count += 1
                     continue
                 email = str(email_val).strip()
                 
-                # Handle CC email (column 6 might not exist or be NaN)
+                # Handle CC email - use counsellor/mentor email (column 4)
                 cc_email_val = None
-                if df.shape[1] > 6:
-                    cc_email_val = df.iloc[i, 6]
+                if df.shape[1] > 4:
+                    cc_email_val = df.iloc[i, 4]  # Column 4: Counsellor/Mentor Email
                 cc_email = None
                 if cc_email_val is not None and not pd.isna(cc_email_val) and str(cc_email_val).strip() != '':
                     cc_email = str(cc_email_val).strip()
                 
-                father = str(df.iloc[i, 3])
-                student_name = str(df.iloc[i, 1])
+                father = str(df.iloc[i, 2])  # Column 2: Father Name (consistent with PDF generation)
+                student_name = str(df.iloc[i, 0])  # Column 0: Student Name
 
                 msg = MIMEMultipart()
                 msg['From'] = SMTP_USERNAME
