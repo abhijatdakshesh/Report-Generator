@@ -462,15 +462,30 @@ def progress_pdf():
         for i in range(2, df.shape[0]):
             buffer = generate_pdf(df, i, Branch_Choice, test_choice, submission_d,semester,no_of_subjects,note)
             file_name = f"{df.iloc[i, 1]}.pdf"
-            email = df.iloc[i, 4]
-            cc_email = df.iloc[i,6]
+            
+            # Get email addresses and handle NaN/None values
+            email_val = df.iloc[i, 4]
+            if pd.isna(email_val) or str(email_val).strip() == '':
+                st.warning(f"Skipping {df.iloc[i, 1]} - No email address found")
+                continue
+            email = str(email_val).strip()
+            
+            # Handle CC email (column 6 might not exist or be NaN)
+            cc_email_val = None
+            if df.shape[1] > 6:
+                cc_email_val = df.iloc[i, 6]
+            cc_email = None
+            if cc_email_val is not None and not pd.isna(cc_email_val) and str(cc_email_val).strip() != '':
+                cc_email = str(cc_email_val).strip()
+            
             father = str(df.iloc[i, 3])
             student_name = str(df.iloc[i, 1])
 
             msg = MIMEMultipart()
             msg['From'] = SMTP_USERNAME
-            msg['To'] = COMMASPACE.join([email])
-            msg['Cc'] = COMMASPACE.join([cc_email])
+            msg['To'] = email
+            if cc_email:
+                msg['Cc'] = cc_email
             msg['Subject'] = ""+test_choice+"\u00a0 "+semester
             
             body = "Dear <b>"+father+"</b> ,<br><br>Herewith enclosed the <b>"+semester+" "+test_choice+"</b>\u00a0  of your ward <b>"+student_name+"</b><br><br>Thanks & Regards,<br><b>RVITM</b>"
@@ -485,16 +500,25 @@ def progress_pdf():
             msg.attach(part)
         
             # Connect to the SMTP server and send the email
-            smtpObj = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-            smtpObj.ehlo()
-            smtpObj.starttls()
-            smtpObj.login(SMTP_USERNAME, SMTP_PASSWORD)
-            smtpObj.sendmail(SMTP_USERNAME, [email,cc_email], msg.as_string())
-            smtpObj.quit()
-        
-            st.write("Email sent to\u00a0"+student_name+"\u00a0 parent's mail - ", email)
-
-            email_sent += 1
+            try:
+                smtpObj = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+                smtpObj.ehlo()
+                smtpObj.starttls()
+                smtpObj.login(SMTP_USERNAME, SMTP_PASSWORD)
+                
+                # Prepare recipient list
+                recipients = [email]
+                if cc_email:
+                    recipients.append(cc_email)
+                
+                smtpObj.sendmail(SMTP_USERNAME, recipients, msg.as_string())
+                smtpObj.quit()
+            
+                st.write("Email sent to\u00a0"+student_name+"\u00a0 parent's mail - ", email)
+                email_sent += 1
+            except Exception as e:
+                st.error(f"Failed to send email to {student_name} ({email}): {str(e)}")
+            
             progress_bar.progress(email_sent / total_emails)
         st.success("All Attendance Reports sent successfully")
 
