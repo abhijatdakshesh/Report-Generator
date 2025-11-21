@@ -449,78 +449,113 @@ def progress_pdf():
          st.write("Enter the mail ID login from which you want to send the mail:")
          
          SMTP_USERNAME = st.text_input('Input mail ID',help="Credentials are safe and not stored anywhere")
-         SMTP_PASSWORD = st.text_input('Input password',type='password')
+         SMTP_PASSWORD = st.text_input('Input password',type='password',help="For Gmail: Use an App Password (not your regular password). Generate one at: https://myaccount.google.com/apppasswords")
+         st.info("ℹ️ **Gmail Users:** You must use an App Password, not your regular Gmail password. Enable 2-Step Verification and generate an App Password from your Google Account settings.")
          st.checkbox("I confirm that the Report generated are correct")
          submitted = st.form_submit_button("Confirm & send email")
 
        if submitted:
-        st.write("Sending Email...")
-        total_emails = df.shape[0] - 2
-        email_sent = 0
-        progress_bar = st.progress(0)
-
-        for i in range(2, df.shape[0]):
-            buffer = generate_pdf(df, i, Branch_Choice, test_choice, submission_d,semester,no_of_subjects,note)
-            file_name = f"{df.iloc[i, 1]}.pdf"
+        if not SMTP_USERNAME or not SMTP_PASSWORD:
+            st.error("Please enter both email and password")
+        else:
+            st.write("Sending Email...")
+            total_emails = df.shape[0] - 2
+            email_sent = 0
+            failed_count = 0
+            progress_bar = st.progress(0)
             
-            # Get email addresses and handle NaN/None values
-            email_val = df.iloc[i, 4]
-            if pd.isna(email_val) or str(email_val).strip() == '':
-                st.warning(f"Skipping {df.iloc[i, 1]} - No email address found")
-                continue
-            email = str(email_val).strip()
-            
-            # Handle CC email (column 6 might not exist or be NaN)
-            cc_email_val = None
-            if df.shape[1] > 6:
-                cc_email_val = df.iloc[i, 6]
-            cc_email = None
-            if cc_email_val is not None and not pd.isna(cc_email_val) and str(cc_email_val).strip() != '':
-                cc_email = str(cc_email_val).strip()
-            
-            father = str(df.iloc[i, 3])
-            student_name = str(df.iloc[i, 1])
-
-            msg = MIMEMultipart()
-            msg['From'] = SMTP_USERNAME
-            msg['To'] = email
-            if cc_email:
-                msg['Cc'] = cc_email
-            msg['Subject'] = ""+test_choice+"\u00a0 "+semester
-            
-            body = "Dear <b>"+father+"</b> ,<br><br>Herewith enclosed the <b>"+semester+" "+test_choice+"</b>\u00a0  of your ward <b>"+student_name+"</b><br><br>Thanks & Regards,<br><b>RVITM</b>"
-            text = MIMEText(body,'html')
-            msg.attach(text)
-        
-            # Attach the generated PDF
-            part = MIMEBase('application', "octet-stream")
-            part.set_payload((buffer.getvalue()))
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition', 'attachment', filename=file_name)
-            msg.attach(part)
-        
-            # Connect to the SMTP server and send the email
+            # Create a single SMTP connection for all emails
+            smtpObj = None
             try:
                 smtpObj = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
                 smtpObj.ehlo()
                 smtpObj.starttls()
                 smtpObj.login(SMTP_USERNAME, SMTP_PASSWORD)
-                
-                # Prepare recipient list
-                recipients = [email]
-                if cc_email:
-                    recipients.append(cc_email)
-                
-                smtpObj.sendmail(SMTP_USERNAME, recipients, msg.as_string())
-                smtpObj.quit()
-            
-                st.write("Email sent to\u00a0"+student_name+"\u00a0 parent's mail - ", email)
-                email_sent += 1
+                st.success("✅ Successfully connected to email server")
+            except smtplib.SMTPAuthenticationError as e:
+                st.error(f"❌ Authentication failed! Please check your credentials.")
+                st.error("**For Gmail users:** Make sure you're using an App Password, not your regular password.")
+                st.error("**Steps to create App Password:**")
+                st.error("1. Enable 2-Step Verification on your Google Account")
+                st.error("2. Go to https://myaccount.google.com/apppasswords")
+                st.error("3. Generate an App Password for 'Mail'")
+                st.error("4. Use that 16-character password here")
+                st.stop()
             except Exception as e:
-                st.error(f"Failed to send email to {student_name} ({email}): {str(e)}")
+                st.error(f"❌ Failed to connect to email server: {str(e)}")
+                st.stop()
+
+            for i in range(2, df.shape[0]):
+                buffer = generate_pdf(df, i, Branch_Choice, test_choice, submission_d,semester,no_of_subjects,note)
+                file_name = f"{df.iloc[i, 1]}.pdf"
+                
+                # Get email addresses and handle NaN/None values
+                email_val = df.iloc[i, 4]
+                if pd.isna(email_val) or str(email_val).strip() == '':
+                    st.warning(f"Skipping {df.iloc[i, 1]} - No email address found")
+                    failed_count += 1
+                    continue
+                email = str(email_val).strip()
+                
+                # Handle CC email (column 6 might not exist or be NaN)
+                cc_email_val = None
+                if df.shape[1] > 6:
+                    cc_email_val = df.iloc[i, 6]
+                cc_email = None
+                if cc_email_val is not None and not pd.isna(cc_email_val) and str(cc_email_val).strip() != '':
+                    cc_email = str(cc_email_val).strip()
+                
+                father = str(df.iloc[i, 3])
+                student_name = str(df.iloc[i, 1])
+
+                msg = MIMEMultipart()
+                msg['From'] = SMTP_USERNAME
+                msg['To'] = email
+                if cc_email:
+                    msg['Cc'] = cc_email
+                msg['Subject'] = ""+test_choice+"\u00a0 "+semester
+                
+                body = "Dear <b>"+father+"</b> ,<br><br>Herewith enclosed the <b>"+semester+" "+test_choice+"</b>\u00a0  of your ward <b>"+student_name+"</b><br><br>Thanks & Regards,<br><b>RVITM</b>"
+                text = MIMEText(body,'html')
+                msg.attach(text)
             
-            progress_bar.progress(email_sent / total_emails)
-        st.success("All Attendance Reports sent successfully")
+                # Attach the generated PDF
+                part = MIMEBase('application', "octet-stream")
+                part.set_payload((buffer.getvalue()))
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', 'attachment', filename=file_name)
+                msg.attach(part)
+            
+                # Send the email using the existing connection
+                try:
+                    # Prepare recipient list
+                    recipients = [email]
+                    if cc_email:
+                        recipients.append(cc_email)
+                    
+                    smtpObj.sendmail(SMTP_USERNAME, recipients, msg.as_string())
+                    st.write("✅ Email sent to\u00a0"+student_name+"\u00a0 parent's mail - ", email)
+                    email_sent += 1
+                except Exception as e:
+                    st.error(f"❌ Failed to send email to {student_name} ({email}): {str(e)}")
+                    failed_count += 1
+                
+                progress_bar.progress((i - 1) / (df.shape[0] - 2))
+            
+            # Close the SMTP connection
+            if smtpObj:
+                try:
+                    smtpObj.quit()
+                except:
+                    pass
+            
+            # Show final summary
+            if email_sent > 0:
+                st.success(f"✅ Successfully sent {email_sent} email(s)")
+            if failed_count > 0:
+                st.warning(f"⚠️ Failed to send {failed_count} email(s)")
+            if email_sent == total_emails:
+                st.success("🎉 All Attendance Reports sent successfully!")
 
 
 progress_pdf()
